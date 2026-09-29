@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#dceef5" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="日本好朋遊" />
+  <title>日本好朋遊</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    [v-cloak]{display:none}
+    *{box-sizing:border-box}
+    :root{
+      --sky:#dceef5; --sky2:#cfe6f0; --ink:#30434b; --muted:#71868f;
+      --blue:#75aabd; --blue2:#a9cedb; --white:rgba(255,255,255,.68);
+    }
+    html{background:#d6e9f1}
+    body{
+      margin:0;color:var(--ink);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",
+      "PingFang TC","Noto Sans TC",Arial,sans-serif;
+      background:#d6e9f1;
+    }
+    button,input,select,textarea{font:inherit;color:inherit}
+    button{touch-action:manipulation}
+    .app{
+      max-width:430px;min-height:100dvh;margin:auto;position:relative;overflow:hidden;
+      background:
+        radial-gradient(ellipse at 12% 8%, rgba(255,255,255,.90) 0 7%, rgba(255,255,255,.36) 19%, transparent 37%),
+        radial-gradient(ellipse at 88% 23%, rgba(255,255,255,.72) 0 9%, rgba(255,255,255,.26) 23%, transparent 41%),
+        radial-gradient(ellipse at 34% 62%, rgba(255,255,255,.42) 0 8%, transparent 33%),
+        linear-gradient(180deg,#d8edf5 0%,#e8f4f7 50%,#d9edf4 100%);
+      box-shadow:0 0 50px rgba(46,79,92,.12);
+    }
+    .cloud{position:fixed;filter:blur(30px);background:rgba(255,255,255,.48);border-radius:999px;pointer-events:none}
+    .glass{
+      background:rgba(255,255,255,.59);
+      border:1px solid rgba(255,255,255,.70);
+      box-shadow:0 12px 35px rgba(69,105,119,.08), inset 0 1px rgba(255,255,255,.75);
+      backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+    }
+    .glass-strong{
+      background:rgba(255,255,255,.76);border:1px solid rgba(255,255,255,.82);
+      box-shadow:0 12px 30px rgba(67,101,115,.10);
+      backdrop-filter:blur(25px);-webkit-backdrop-filter:blur(25px);
+    }
+    .safe-main{padding-bottom:calc(112px + env(safe-area-inset-bottom))}
+    .safe-nav{bottom:calc(14px + env(safe-area-inset-bottom))}
+    .hide-scroll::-webkit-scrollbar{display:none}.hide-scroll{scrollbar-width:none}
+    .sheet-enter-active,.sheet-leave-active{transition:.22s ease}
+    .sheet-enter-from,.sheet-leave-to{opacity:0}
+    .sheet-enter-from .panel,.sheet-leave-to .panel{transform:translateY(36px)}
+    .toast-enter-active,.toast-leave-active{transition:.2s}.toast-enter-from,.toast-leave-to{opacity:0;transform:translate(-50%,8px)}
+    .field{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.9);outline:none}
+    .field:focus{box-shadow:0 0 0 3px rgba(117,170,189,.18)}
+  </style>
+</head>
+<body>
+<div id="app" v-cloak class="app">
+  <div class="cloud w-56 h-24 -left-16 top-24"></div>
+  <div class="cloud w-64 h-28 -right-24 top-[42%]"></div>
+
+  <main class="relative z-10 safe-main">
+    <header class="px-5 pt-7 pb-3">
+      <div class="flex justify-between items-start">
+        <div>
+          <p class="text-[11px] tracking-[.24em] font-semibold text-[#7196a4]">NIHON KŌYŪ</p>
+          <h1 class="text-[28px] leading-tight font-semibold tracking-tight mt-1">日本好朋遊</h1>
+          <p class="text-sm text-[#78909a] mt-1">{{ pageSubtitle }}</p>
+        </div>
+        <div class="glass w-12 h-12 rounded-[18px] grid place-items-center text-lg font-medium">日</div>
+      </div>
+    </header>
+
+    <!-- PLAN -->
+    <section v-if="tab==='plan'" class="px-4 pt-3">
+      <div class="flex items-end justify-between px-1 mb-3">
+        <div>
+          <div class="text-xs text-[#78909a]">JAPAN TRIP</div>
+          <h2 class="text-xl font-semibold mt-0.5">日本之旅</h2>
+        </div>
+        <button @click="openItinerary()" class="glass-strong rounded-full px-4 py-2 text-sm font-semibold">＋ 新增</button>
+      </div>
+
+      <div class="flex gap-2 overflow-x-auto hide-scroll pb-3">
+        <button v-for="d in days" :key="d.date" @click="selectedDate=d.date"
+          class="shrink-0 rounded-[22px] px-4 py-3 text-left transition"
+          :class="selectedDate===d.date ? 'bg-[#5f8fa1] text-white shadow-lg shadow-[#7299a8]/20' : 'glass'">
+          <div class="text-[11px] opacity-75">{{ weekday(d.date) }}</div>
+          <div class="font-semibold mt-0.5">{{ shortDate(d.date) }}</div>
+        </button>
+        <button @click="addDay" class="glass shrink-0 w-12 rounded-[22px] text-xl">＋</button>
+      </div>
+
+      <div class="glass rounded-[32px] p-5 mt-1 overflow-hidden relative">
+        <div class="absolute -right-8 -top-10 w-32 h-32 bg-white/40 blur-2xl rounded-full"></div>
+        <div class="relative flex justify-between items-start">
+          <div>
+            <p class="text-[11px] tracking-[.16em] text-[#6c94a3] font-semibold">TODAY</p>
+            <div class="text-[22px] font-semibold mt-1">{{ dayLabel(selectedDate) }}</div>
+            <div class="flex gap-4 text-xs text-[#71868f] mt-3">
+              <span>{{ selectedItems.length }} 個行程</span>
+              <span>預估 ¥{{ selectedItems.reduce((s,i)=>s+(Number(i.cost)||0),0).toLocaleString() }}</span>
+            </div>
+          </div>
+          <div class="w-11 h-11 rounded-full bg-white/55 grid place-items-center">☁</div>
+        </div>
+      </div>
+
+      <div v-if="!selectedItems.length" class="glass rounded-[28px] p-8 mt-4 text-center">
+        <div class="text-3xl opacity-70">○</div>
+        <div class="font-semibold mt-3">這一天還很輕</div>
+        <p class="text-sm text-[#78909a] mt-1">把想去的地方慢慢放進來。</p>
+      </div>
+
+      <div v-else class="mt-5">
+        <div v-for="(item,idx) in selectedItems" :key="item.id" class="flex gap-3">
+          <div class="w-12 shrink-0 text-right pt-4 text-sm font-semibold">{{ item.time || '—' }}</div>
+          <div class="relative w-4 shrink-0">
+            <div v-if="idx<selectedItems.length-1" class="absolute left-1/2 top-7 bottom-0 w-px bg-white/90"></div>
+            <div class="absolute top-5 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-[#7faebe] ring-4 ring-white/50"></div>
+          </div>
+          <div class="glass-strong rounded-[26px] p-4 mb-3 flex-1 min-w-0">
+            <div class="flex justify-between gap-2">
+              <div class="min-w-0">
+                <h3 class="font-semibold text-[17px] truncate">{{ item.place }}</h3>
+                <p v-if="item.note" class="text-sm text-[#78909a] mt-1">{{ item.note }}</p>
+                <p v-if="item.cost" class="text-xs text-[#6792a2] mt-2">預估 ¥{{ Number(item.cost).toLocaleString() }}</p>
+              </div>
+              <button @click="openItinerary(item)" class="w-9 h-9 rounded-full bg-[#edf5f7] shrink-0">•••</button>
+            </div>
+            <div class="flex gap-2 mt-3">
+              <button @click="navigate(item.place)" class="flex-1 py-2.5 rounded-[16px] bg-[#dceef4] text-[#527f90] text-sm font-semibold">導航</button>
+              <button @click="showOnMap(item.place)" class="flex-1 py-2.5 rounded-[16px] bg-white/70 text-sm font-semibold">地圖</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SPLIT -->
+    <section v-if="tab==='split'" class="px-4 pt-3">
+      <div class="px-1 mb-3">
+        <div class="text-xs text-[#78909a]">TRIP WALLET</div>
+        <h2 class="text-xl font-semibold mt-0.5">旅費分帳</h2>
+      </div>
+
+      <div class="glass rounded-[30px] p-5">
+        <div class="flex justify-between items-center">
+          <div><div class="text-xs text-[#78909a]">旅伴</div><div class="font-semibold text-lg mt-1">{{ people.length }} 人一起旅行</div></div>
+          <button @click="openPerson" class="w-10 h-10 rounded-full bg-[#6897a8] text-white text-xl">＋</button>
+        </div>
+        <div class="flex gap-2 mt-4 overflow-x-auto hide-scroll">
+          <span v-for="p in people" :key="p.id" class="shrink-0 bg-white/65 px-3 py-2 rounded-full text-sm">{{ p.name }}</span>
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center px-1 mt-6">
+        <h3 class="font-semibold text-lg">支出紀錄</h3>
+        <button @click="openExpense()" class="rounded-full px-4 py-2 bg-[#6897a8] text-white text-sm font-semibold">＋ 記一筆</button>
+      </div>
+
+      <div v-if="!expenses.length" class="glass rounded-[26px] p-7 mt-3 text-center text-sm text-[#78909a]">目前還沒有支出。</div>
+      <div v-for="e in expenses" :key="e.id" class="glass-strong rounded-[24px] p-4 mt-3">
+        <div class="flex justify-between gap-3">
+          <div><div class="font-semibold">{{e.title}}</div><div class="text-xs text-[#78909a] mt-1">{{personName(e.payer)}} 先付 · {{e.involved.map(personName).join('、')}}</div></div>
+          <div class="text-right"><div class="font-semibold">¥{{Number(e.amount).toLocaleString()}}</div><button @click="deleteExpense(e.id)" class="text-xs text-[#8da0a8] mt-1">刪除</button></div>
+        </div>
+      </div>
+
+      <div class="glass rounded-[30px] p-5 mt-5">
+        <p class="text-[11px] tracking-[.15em] text-[#78909a]">SETTLEMENT</p>
+        <h3 class="text-lg font-semibold mt-1">最後這樣付</h3>
+        <div v-if="!settlements.length" class="text-sm text-[#78909a] mt-4">目前帳目已平衡。</div>
+        <div v-for="(s,i) in settlements" :key="i" class="mt-3 bg-white/60 rounded-[20px] p-3 flex justify-between">
+          <span class="text-sm"><b>{{s.from}}</b> → <b>{{s.to}}</b></span>
+          <b class="text-[#5f8fa1]">¥{{Math.round(s.amount).toLocaleString()}}</b>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAP -->
+    <section v-if="tab==='map'" class="px-4 pt-3">
+      <div class="px-1 mb-3"><div class="text-xs text-[#78909a]">WANDER JAPAN</div><h2 class="text-xl font-semibold mt-0.5">地圖導航</h2></div>
+      <div class="glass rounded-[30px] overflow-hidden">
+        <div class="p-4">
+          <div class="flex gap-2">
+            <input v-model="mapQuery" @keyup.enter="updateMap" placeholder="搜尋日本的地點…" class="field w-full rounded-[18px] px-4 py-3">
+            <button @click="updateMap" class="w-12 rounded-[18px] bg-[#6897a8] text-white">⌕</button>
+          </div>
+        </div>
+        <iframe :src="mapEmbedUrl" class="w-full h-[52vh] border-0 opacity-90" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+      <button @click="navigate(mapQuery||'日本')" class="glass-strong w-full rounded-[22px] p-4 mt-3 flex justify-between items-center">
+        <span class="font-semibold">在 Google Maps 開始導航</span><span>↗</span>
+      </button>
+      <h3 class="font-semibold text-lg mt-6 px-1">行程地點</h3>
+      <button v-for="i in sortedItinerary" :key="i.id" @click="showOnMap(i.place)" class="glass w-full rounded-[22px] p-4 mt-3 text-left flex justify-between">
+        <div><div class="font-semibold">{{i.place}}</div><div class="text-xs text-[#78909a] mt-1">{{shortDate(i.date)}} · {{i.time}}</div></div><span>›</span>
+      </button>
+    </section>
+  </main>
+
+  <!-- FLOATING IOS NAV -->
+  <nav class="fixed safe-nav left-1/2 -translate-x-1/2 z-30 w-[calc(100%-28px)] max-w-[402px] glass-strong rounded-[28px] px-3 py-2">
+    <div class="grid grid-cols-3 gap-1">
+      <button @click="tab='plan'" class="rounded-[20px] py-2 transition" :class="tab==='plan'?'bg-white/80 text-[#527f90]':'text-[#81959d]'">
+        <div class="text-lg">◷</div><div class="text-[11px] mt-0.5">行程</div>
+      </button>
+      <button @click="tab='split'" class="rounded-[20px] py-2 transition" :class="tab==='split'?'bg-white/80 text-[#527f90]':'text-[#81959d]'">
+        <div class="text-lg">¥</div><div class="text-[11px] mt-0.5">分帳</div>
+      </button>
+      <button @click="tab='map'" class="rounded-[20px] py-2 transition" :class="tab==='map'?'bg-white/80 text-[#527f90]':'text-[#81959d]'">
+        <div class="text-lg">⌖</div><div class="text-[11px] mt-0.5">地圖</div>
+      </button>
+    </div>
+  </nav>
+
+  <!-- itinerary sheet -->
+  <transition name="sheet">
+    <div v-if="modal==='itinerary'" class="fixed inset-0 z-50 bg-[#49636d]/25 backdrop-blur-sm flex items-end justify-center" @click.self="closeModal">
+      <div class="panel w-full max-w-[430px] bg-[#edf7fa]/95 backdrop-blur-2xl rounded-t-[34px] p-5 transition-transform">
+        <div class="w-10 h-1 bg-[#b9ced6] rounded-full mx-auto mb-5"></div>
+        <h2 class="text-xl font-semibold">{{formItem.id?'編輯行程':'新增行程'}}</h2>
+        <div class="grid grid-cols-2 gap-3 mt-4">
+          <input v-model="formItem.date" type="date" class="field rounded-[18px] px-3 py-3">
+          <input v-model="formItem.time" type="time" class="field rounded-[18px] px-3 py-3">
+        </div>
+        <input v-model="formItem.place" placeholder="地點，例如：清水寺" class="field w-full mt-3 rounded-[18px] px-4 py-3">
+        <input v-model="formItem.cost" type="number" min="0" placeholder="預估花費（日圓，可不填）" class="field w-full mt-3 rounded-[18px] px-4 py-3">
+        <textarea v-model="formItem.note" rows="3" placeholder="訂位、交通、想吃什麼…" class="field w-full mt-3 rounded-[18px] px-4 py-3 resize-none"></textarea>
+        <div class="flex gap-2 mt-4">
+          <button v-if="formItem.id" @click="deleteItinerary(formItem.id)" class="px-4 py-3 rounded-[18px] bg-white/70 text-[#8d6969]">刪除</button>
+          <button @click="saveItinerary" class="flex-1 py-3 rounded-[18px] bg-[#628fa0] text-white font-semibold">儲存</button>
+        </div>
+      </div>
+    </div>
+  </transition>
+
+  <!-- expense sheet -->
+  <transition name="sheet">
+    <div v-if="modal==='expense'" class="fixed inset-0 z-50 bg-[#49636d]/25 backdrop-blur-sm flex items-end justify-center" @click.self="closeModal">
+      <div class="panel w-full max-w-[430px] bg-[#edf7fa]/95 rounded-t-[34px] p-5">
+        <div class="w-10 h-1 bg-[#b9ced6] rounded-full mx-auto mb-5"></div>
+        <h2 class="text-xl font-semibold">新增支出</h2>
+        <input v-model="expenseForm.title" placeholder="項目，例如：晚餐" class="field w-full mt-4 rounded-[18px] px-4 py-3">
+        <input v-model="expenseForm.amount" type="number" min="0" placeholder="金額（日圓）" class="field w-full mt-3 rounded-[18px] px-4 py-3">
+        <label class="text-xs text-[#78909a] block mt-4 mb-2">誰先付？</label>
+        <select v-model="expenseForm.payer" class="field w-full rounded-[18px] px-4 py-3">
+          <option v-for="p in people" :value="p.id">{{p.name}}</option>
+        </select>
+        <label class="text-xs text-[#78909a] block mt-4 mb-2">哪些人一起分？</label>
+        <div class="flex flex-wrap gap-2">
+          <button v-for="p in people" @click="toggleInvolved(p.id)" class="px-3 py-2 rounded-full text-sm"
+            :class="expenseForm.involved.includes(p.id)?'bg-[#6897a8] text-white':'bg-white/70'">{{p.name}}</button>
+        </div>
+        <button @click="saveExpense" class="w-full mt-5 py-3 rounded-[18px] bg-[#628fa0] text-white font-semibold">加入分帳</button>
+      </div>
+    </div>
+  </transition>
+
+  <!-- person sheet -->
+  <transition name="sheet">
+    <div v-if="modal==='person'" class="fixed inset-0 z-50 bg-[#49636d]/25 backdrop-blur-sm flex items-end justify-center" @click.self="closeModal">
+      <div class="panel w-full max-w-[430px] bg-[#edf7fa]/95 rounded-t-[34px] p-5">
+        <div class="w-10 h-1 bg-[#b9ced6] rounded-full mx-auto mb-5"></div>
+        <h2 class="text-xl font-semibold">新增旅伴</h2>
+        <input v-model="newPersonName" @keyup.enter="addPerson" placeholder="名字或暱稱" class="field w-full mt-4 rounded-[18px] px-4 py-3">
+        <button @click="addPerson" class="w-full mt-4 py-3 rounded-[18px] bg-[#628fa0] text-white font-semibold">加入</button>
+      </div>
+    </div>
+  </transition>
+
+  <transition name="toast">
+    <div v-if="toast" class="fixed left-1/2 -translate-x-1/2 bottom-28 z-[70] bg-[#405b65]/90 text-white px-4 py-2.5 rounded-full text-sm backdrop-blur-xl">{{toast}}</div>
+  </transition>
+</div>
+
+<script>
+const {createApp}=Vue;
+createApp({
+ data(){
+  const now=new Date(), ds=[...Array(5)].map((_,i)=>{let d=new Date(now);d.setDate(d.getDate()+i);return d.toISOString().slice(0,10)});
+  return {tab:'plan',modal:null,toast:'',selectedDate:ds[0],days:ds.map(date=>({date})),
+   itinerary:[
+    {id:1,date:ds[0],time:'10:00',place:'淺草寺',note:'雷門、仲見世通散步。',cost:0},
+    {id:2,date:ds[0],time:'13:30',place:'上野公園',note:'午餐後慢慢走。',cost:1200},
+    {id:3,date:ds[1],time:'11:00',place:'明治神宮',note:'從原宿站進入。',cost:0}
+   ],
+   people:[{id:1,name:'我'},{id:2,name:'旅伴'}],expenses:[],
+   formItem:{},expenseForm:{title:'',amount:'',payer:1,involved:[1,2]},newPersonName:'',
+   mapQuery:'日本',mapTarget:'日本'
+  }
+ },
+ created(){this.load();this.refreshDays()},
+ computed:{
+  pageSubtitle(){return {plan:'和喜歡的人，慢慢走日本。',split:'旅行的帳，清楚又輕鬆。',map:'下一站，想去哪裡？'}[this.tab]},
+  selectedItems(){return this.itinerary.filter(i=>i.date===this.selectedDate).sort((a,b)=>(a.time||'').localeCompare(b.time||''))},
+  sortedItinerary(){return this.itinerary.slice().sort((a,b)=>a.date.localeCompare(b.date)||(a.time||'').localeCompare(b.time||''))},
+  mapEmbedUrl(){return 'https://www.google.com/maps?q='+encodeURIComponent(this.mapTarget||'日本')+'&output=embed'},
+  settlements(){
+   const b={};this.people.forEach(p=>b[p.id]=0);
+   this.expenses.forEach(e=>{let a=+e.amount||0,n=e.involved.length||1,s=a/n;b[e.payer]=(b[e.payer]||0)+a;e.involved.forEach(id=>b[id]=(b[id]||0)-s)});
+   let d=this.people.map(p=>({name:p.name,amt:b[p.id]||0})).filter(x=>x.amt<-.5).sort((a,b)=>a.amt-b.amt);
+   let c=this.people.map(p=>({name:p.name,amt:b[p.id]||0})).filter(x=>x.amt>.5).sort((a,b)=>b.amt-a.amt),o=[],i=0,j=0;
+   while(i<d.length&&j<c.length){let x=Math.min(-d[i].amt,c[j].amt);o.push({from:d[i].name,to:c[j].name,amount:x});d[i].amt+=x;c[j].amt-=x;if(Math.abs(d[i].amt)<.5)i++;if(Math.abs(c[j].amt)<.5)j++}return o
+  }
+ },
+ methods:{
+  weekday(s){return ['日','一','二','三','四','五','六'][new Date(s+'T12:00:00').getDay()]+'曜日'},
+  shortDate(s){let d=new Date(s+'T12:00:00');return `${d.getMonth()+1}/${d.getDate()}`},
+  dayLabel(s){return `${this.shortDate(s)} · ${this.weekday(s)}`},
+  refreshDays(){let x=[...new Set([...this.days.map(d=>d.date),...this.itinerary.map(i=>i.date)])].sort();this.days=x.map(date=>({date}));if(!x.includes(this.selectedDate)&&x.length)this.selectedDate=x[0]},
+  addDay(){let s=this.days.at(-1)?.date||new Date().toISOString().slice(0,10),d=new Date(s+'T12:00:00');d.setDate(d.getDate()+1);s=d.toISOString().slice(0,10);this.days.push({date:s});this.selectedDate=s;this.persist()},
+  openItinerary(i=null){this.formItem=i?{...i}:{id:null,date:this.selectedDate,time:'10:00',place:'',note:'',cost:''};this.modal='itinerary'},
+  saveItinerary(){if(!this.formItem.place.trim())return this.say('先填一個地點');if(this.formItem.id){let x=this.itinerary.findIndex(i=>i.id===this.formItem.id);this.itinerary[x]={...this.formItem}}else this.itinerary.push({...this.formItem,id:Date.now()});this.selectedDate=this.formItem.date;this.refreshDays();this.persist();this.closeModal();this.say('行程已儲存')},
+  deleteItinerary(id){this.itinerary=this.itinerary.filter(i=>i.id!==id);this.persist();this.closeModal()},
+  openExpense(){this.expenseForm={title:'',amount:'',payer:this.people[0]?.id,involved:this.people.map(p=>p.id)};this.modal='expense'},
+  toggleInvolved(id){let a=this.expenseForm.involved;this.expenseForm.involved=a.includes(id)?a.filter(x=>x!==id):[...a,id]},
+  saveExpense(){if(!this.expenseForm.title.trim()||!(+this.expenseForm.amount>0)||!this.expenseForm.involved.length)return this.say('請把資料填完整');this.expenses.unshift({...this.expenseForm,id:Date.now(),amount:+this.expenseForm.amount});this.persist();this.closeModal();this.say('這筆帳記好了')},
+  deleteExpense(id){this.expenses=this.expenses.filter(e=>e.id!==id);this.persist()},
+  personName(id){return this.people.find(p=>p.id===id)?.name||'未知'},
+  openPerson(){this.newPersonName='';this.modal='person'},
+  addPerson(){let n=this.newPersonName.trim();if(!n)return;this.people.push({id:Date.now(),name:n});this.persist();this.closeModal()},
+  showOnMap(p){this.mapQuery=p;this.mapTarget=p;this.tab='map';scrollTo({top:0,behavior:'smooth'})},
+  updateMap(){this.mapTarget=this.mapQuery.trim()||'日本'},
+  navigate(p){window.open('https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(p),'_blank','noopener')},
+  closeModal(){this.modal=null},
+  say(s){this.toast=s;clearTimeout(this._t);this._t=setTimeout(()=>this.toast='',1800)},
+  persist(){localStorage.setItem('nihon-koyu-v2',JSON.stringify({days:this.days,itinerary:this.itinerary,people:this.people,expenses:this.expenses}))},
+  load(){try{
+    let x=JSON.parse(localStorage.getItem('nihon-koyu-v2'));
+    if(!x){let old=JSON.parse(localStorage.getItem('tokyo-trip-app'));if(old)x=old}
+    if(x){if(x.days)this.days=x.days;if(x.itinerary)this.itinerary=x.itinerary;if(x.people)this.people=x.people;if(x.expenses)this.expenses=x.expenses}
+  }catch(e){}}
+ }
+}).mount('#app')
+</script>
+</body>
+</html>
